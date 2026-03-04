@@ -13,6 +13,7 @@ export default function Calculator({ initialForm = null }) {
         profession: '',
         monthlyIncome: 6000,
         monthlyExpenses: 3000,
+        householdSize: 1,
         effectiveTaxRate: 20,
         cash: 10000,
         investments: 20000,
@@ -88,6 +89,7 @@ export default function Calculator({ initialForm = null }) {
         e.preventDefault()
         const monthlyIncome = number(form.monthlyIncome)
         const monthlyExpenses = number(form.monthlyExpenses)
+        const householdSize = Math.max(1, Math.round(number(form.householdSize) || 1))
         const cash = number(form.cash)
         const investments = number(form.investments)
         const property = number(form.property)
@@ -114,8 +116,11 @@ export default function Calculator({ initialForm = null }) {
         const netWorth = totalAssets - totalLiabilities
 
         const annualExpenses = monthlyExpenses * 12
+        const perPersonMonthlyExpense = monthlyExpenses / householdSize
+        const perPersonAnnualExpense = annualExpenses / householdSize
         // Kill-line: 可配置倍数 K
         const killLine = annualExpenses * K
+        const perPersonKillLine = perPersonAnnualExpense * K
 
         const monthsRunway = monthlyExpenses > 0 ? (liquidAssets / monthlyExpenses) : Infinity
         const annualIncome = monthlyIncome * 12
@@ -176,12 +181,16 @@ export default function Calculator({ initialForm = null }) {
         setResult({
             monthlyIncome,
             monthlyExpenses,
+            householdSize,
             liquidAssets,
             totalAssets,
             totalLiabilities,
             netWorth,
             annualExpenses,
+            perPersonMonthlyExpense,
+            perPersonAnnualExpense,
             killLine,
+            perPersonKillLine,
             monthsRunway: Math.round(monthsRunway * 10) / 10,
             debtToIncome: Math.round(debtToIncome * 100) / 100,
             score,
@@ -328,6 +337,9 @@ export default function Calculator({ initialForm = null }) {
                     <label>月支出
                         <input name="monthlyExpenses" type="number" value={form.monthlyExpenses} onChange={handleChange} title="每月基础生活成本（不含可选消费），用于计算年度支出与斩杀线。默认示例：3000。" />
                     </label>
+                    <label>家庭人数（分摊人数）
+                        <input name="householdSize" type="number" min="1" step="1" value={form.householdSize} onChange={handleChange} title="用于估算每个人平均承担的月支出、年支出与斩杀线金额。" />
+                    </label>
                     <label>有效税率（%）
                         <input name="effectiveTaxRate" type="number" value={form.effectiveTaxRate} onChange={handleChange} title="综合有效税率（百分数），包含各类税费与社保。示例：20 表示 20%。在模型中会除以 100 转为小数。" />
                     </label>
@@ -393,7 +405,10 @@ export default function Calculator({ initialForm = null }) {
                         <li>流动资产: ${result.liquidAssets.toLocaleString()}</li>
                         <li>总负债: ${result.totalLiabilities.toLocaleString()}</li>
                         <li>年支出: ${result.annualExpenses.toLocaleString()}</li>
+                        <li>每人月支出（按 {result.householdSize} 人分摊）: ${Math.round(result.perPersonMonthlyExpense).toLocaleString()}</li>
+                        <li>每人年支出（按 {result.householdSize} 人分摊）: ${Math.round(result.perPersonAnnualExpense).toLocaleString()}</li>
                         <li>建议的斩杀线（25x 年支出）: ${result.killLine.toLocaleString()}</li>
+                        <li>每人斩杀线（按 {result.householdSize} 人分摊）: ${Math.round(result.perPersonKillLine).toLocaleString()}</li>
                         <li>可支撑月数（流动性/月支出）: {result.monthsRunway} 月</li>
                         <li>债务与收入比（DTI）: {result.debtToIncome}</li>
                         <li>抗风险得分: {result.score} / 100</li>
